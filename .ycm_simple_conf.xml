@@ -1,0 +1,6 @@
+<project type="c++">
+   <!--include path="/home/local/libA/include"/-->
+   <!--include path="/home/local/libB/include"/-->
+   <!--include path="include"/-->
+   <include path="/home/chenzheng/src/work/example/src"/>
+</project>
