@@ -8,26 +8,31 @@ using namespace std;
 
 //////////////////////////public methods//////////////////////////
 
-CTimer::CTimer():
-       m_second(0), m_microsecond(0)
+CTimer::CTimer() :
+   m_second(0), m_microsecond(0)
 {
 }
+
 CTimer::CTimer(long second, long microsecond) :
-       m_second(second), m_microsecond(microsecond)
+   m_second(second), m_microsecond(microsecond)
 {
 }
+
 CTimer::~CTimer()
 {
 }
+
 void CTimer::SetTimer(long second, long microsecond)
 {
     m_second = second;
     m_microsecond = microsecond;
 }
+
 void CTimer::StartTimer()
 {
     pthread_create(&thread_timer, NULL, OnTimer_stub, this);
 }
+
 void CTimer::StopTimer()
 {
     pthread_cancel(thread_timer);
@@ -37,17 +42,17 @@ void CTimer::StopTimer()
 //////////////////////////private methods//////////////////////////
 void CTimer::thread_proc()
 {
-    while (true)
-    {
-	        OnTimer();
-	        pthread_testcancel();
-	        struct timeval tempval;
-	        tempval.tv_sec = m_second;
-	        tempval.tv_usec = m_microsecond;
-	        select(0, NULL, NULL, NULL, &tempval);
-	    }
+    while (true){
+        OnTimer();
+        pthread_testcancel();
+        struct timeval tempval;
+        tempval.tv_sec = m_second;
+        tempval.tv_usec = m_microsecond;
+        select(0, NULL, NULL, NULL, &tempval);
+    }
 }
+
 void CTimer::OnTimer()
 {
-    cout<<"Timer once..."<<endl;
+	cout<<"Timer once..."<<endl;
 }
