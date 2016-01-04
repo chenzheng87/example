@@ -22,8 +22,7 @@ class TaskMaker : public CTimer
 		 flag_cnt = 0;
 	  }
 	  TaskMaker(long second, long microsecond, threadpool p)
-		 : thpool_p(p), flag_cnt(0){
-		 CTimer(second, microsecond);
+		 : CTimer(second, microsecond), thpool_p(p), flag_cnt(0){
 	  }
 	  void setThreadPool(threadpool p){
 		 thpool_p = p;

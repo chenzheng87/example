@@ -36,21 +36,23 @@ using namespace std;
 int main()
 {
 	//thread pool start
-	puts("Making threadpool with 4 threads");
-	threadpool thpool = thpool_init(4);
-
-    TaskMaker t1(1, 0, thpool);    //构造函数，设两个定时器，以1秒为触发时间。参数1是秒，参数2是微秒。
-    t1.StartTimer();
-    //sleep(10);
-	//puts("Adding 40 tasks to threadpool");
-	//int i;
-	//for (i=0; i<20; i++){
-		//thpool_add_work(thpool, task1, NULL);
-		//thpool_add_work(thpool, task2, NULL);
-	//};
-
-	//puts("Killing threadpool");
-	/*thpool_destroy(thpool);*/
-	
-	return 0;
+   puts("Making threadpool with 4 threads");
+   threadpool thpool = thpool_init(4);
+   
+   TaskMaker t1(1, 0, thpool);
+   t1.StartTimer();
+     //sleep(10);
+   //puts("Adding 40 tasks to threadpool");
+   //int i;
+   //for (i=0; i<20; i++){
+   	//thpool_add_work(thpool, task1, NULL);
+   	//thpool_add_work(thpool, task2, NULL);
+   //};
+   
+   //puts("Killing threadpool");
+   /*thpool_destroy(thpool);*/
+    
+   char input_array[100];
+   scanf("%s", input_array);	
+   return 0;
 }
