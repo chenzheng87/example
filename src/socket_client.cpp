@@ -8,40 +8,64 @@
 #include <string.h>
 #include <sys/select.h>
 #include <sys/time.h>
+#include <sys/ioctl.h>
+
+#define	TIME_OUT_TIME 10 
 
 int main(int argc,char *argv[])  
 {  
-	int sockfd;  
-	int len;  
+	int sockfd;
+	int result, optval, byte, len;  
 	struct sockaddr_in address;     
-	int result;  
-	int byte;  
+	struct timeval time_limit;
+	int maxfd = -1;
+	fd_set fds;
+
 	if(argc != 3){  
 		printf("Usage: fileclient <address> <port>/n"); 
 		return 0;  
 	}  
-	if((sockfd = socket(AF_INET,SOCK_STREAM,0)) == -1){  
+
+	sockfd = socket(AF_INET,SOCK_STREAM,0);
+	if(sockfd == -1){  
 		perror("sock");  
 		exit(EXIT_FAILURE);  
 	}  
+
 	bzero(&address,sizeof(address));  
 	address.sin_family = AF_INET;  
 	address.sin_port = htons(atoi(argv[2]));  
 	inet_pton(AF_INET,argv[1],&address.sin_addr);  
-	len = sizeof(address);  
 
-	if((result = connect(sockfd, (struct sockaddr *)&address, len))==-1){  
-		perror("connect");  
-		exit(EXIT_FAILURE);  
-	}  
+	ioctl(sockfd, FIONBIO);	
+	while(true){ 
+		result = connect(sockfd, (struct sockaddr *)&address, sizeof(address));
+		if(result < 0){
+			time_limit.tv_sec = TIME_OUT_TIME;
+			time_limit.tv_usec = 0;
+			FD_ZERO(&fds);
+			FD_SET(sockfd, &fds);
+			maxfd = sockfd + 1;
+			len = sizeof(int);
+			result = select(maxfd, NULL, &fds, NULL, &time_limit);
+			if(result < 1){
+				perror("connect failed, sleep 5 secs");
+				sleep(5);
+			}else{
+				result = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &optval, (socklen_t *)&len);
+				if(result == 0){
+					break;	
+				}
+			}
+		}else{
+			break;
+		}
+	}
 
 	int arg_cnt = 0;
 	char arg_str[100] = {0};	
 
 	int ret_val;
-	fd_set fds;
-	int maxfd = -1;
-	struct timeval time_limit;
 	time_limit.tv_sec = 1;
 	time_limit.tv_usec = 0;
 	//send data example
@@ -63,7 +87,7 @@ int main(int argc,char *argv[])
 					//perror("reconnect sock");  
 					//exit(EXIT_FAILURE);  
 				//}
-				//while(connect(sockfd, (struct sockaddr *)&address, len) == -1){
+				//while(connect(sockfd, (struct sockaddr *)&address, sizeof(address)) == -1){
 					//perror("reconnect");
 					//sleep(1);
 				//}
@@ -81,7 +105,7 @@ int main(int argc,char *argv[])
 							//perror("reconnect sock");  
 							//exit(EXIT_FAILURE);  
 						//}
-						//while(connect(sockfd, (struct sockaddr *)&address, len) == -1){
+						//while(connect(sockfd, (struct sockaddr *)&address, sizeof(address)) == -1){
 							//perror("reconnect connect");
 							//sleep(1);
 						//}
@@ -108,7 +132,7 @@ int main(int argc,char *argv[])
 					perror("reconnect sock");  
 					exit(EXIT_FAILURE);  
 				}
-				while(connect(sockfd, (struct sockaddr *)&address, len) == -1){
+				while(connect(sockfd, (struct sockaddr *)&address, sizeof(address)) == -1){
 					perror("reconnect");
 					sleep(1);
 				}
@@ -119,20 +143,24 @@ int main(int argc,char *argv[])
 			default:
 				//data ready to send
 				if(FD_ISSET(sockfd, &fds)){
-					if(arg_cnt == 20)
-						arg_cnt = 0;
-					sprintf(arg_str, "%d", arg_cnt++);
-					if((byte=recv(sockfd, arg_str, 100, MSG_NOSIGNAL))==0){  
-						perror("recieve");  
-						close(sockfd);
-						if((sockfd = socket(AF_INET,SOCK_STREAM,0)) == -1){  
-							perror("reconnect sock");  
-							exit(EXIT_FAILURE);  
-						}
-						while(connect(sockfd, (struct sockaddr *)&address, len) == -1){
-							perror("reconnect connect");
-							sleep(1);
-						}
+					byte = recv(sockfd, arg_str, 100, MSG_NOSIGNAL);
+					switch(byte){
+						case -1:
+						case 0:
+							perror("recieve");  
+							close(sockfd);
+							if((sockfd = socket(AF_INET,SOCK_STREAM,0)) == -1){  
+								perror("reconnect sock");  
+								exit(EXIT_FAILURE);  
+							}
+							while(connect(sockfd, (struct sockaddr *)&address, sizeof(address)) == -1){
+								perror("reconnect connect");
+								sleep(1);
+							}
+							break;
+						default:
+							printf("recieve %s\n", arg_str);	
+							break;
 					}             
 				}
 				break;
