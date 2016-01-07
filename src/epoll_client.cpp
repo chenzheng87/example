@@ -1,15 +1,15 @@
 #include <sys/types.h>  
 #include <sys/socket.h>  
 #include <sys/time.h>
-#include <sys/ioctl.h>
 #include <sys/select.h>
 #include <sys/epoll.h>
-#include <stdio.h>  
 #include <netinet/in.h>  
 #include <arpa/inet.h>  
 #include <unistd.h>  
 #include <stdlib.h>  
 #include <string.h>
+#include <stdio.h>  
+#include <fcntl.h>
 
 #define	TIME_OUT_TIME 10 
 #define MAX_EVENTS 10
@@ -56,7 +56,10 @@ int main(int argc,char *argv[])
 	address.sin_port = htons(atoi(argv[2]));  
 	inet_pton(AF_INET,argv[1],&address.sin_addr);  
 
-	ioctl(sockfd, FIONBIO);	
+	//set socket as no block mode
+	result = fcntl(sockfd, F_GETFL, 0);
+	fcntl(sockfd, F_SETFL, result|O_NONBLOCK);
+
 	while(true){ 
 		result = connect(sockfd, (struct sockaddr *)&address, sizeof(address));
 		if(result < 0){
