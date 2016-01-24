@@ -8,7 +8,6 @@
  * 
  ********************************/
 
-
 #include <unistd.h>
 #include <signal.h>
 #include <stdio.h>
@@ -29,11 +28,7 @@
 static volatile int threads_keepalive;
 static volatile int threads_on_hold;
 
-
-
 /* ========================== STRUCTURES ============================ */
-
-
 /* Binary semaphore */
 typedef struct bsem {
 	pthread_mutex_t mutex;
@@ -41,14 +36,12 @@ typedef struct bsem {
 	int v;
 } bsem;
 
-
 /* Job */
 typedef struct job{
 	struct job*  prev;                   /* pointer to previous job   */
 	void*  (*function)(void* arg);       /* function pointer          */
 	void*  arg;                          /* function's argument       */
 } job;
-
 
 /* Job queue */
 typedef struct jobqueue{
@@ -59,14 +52,12 @@ typedef struct jobqueue{
 	int   len;                           /* number of jobs in queue   */
 } jobqueue;
 
-
 /* Thread */
 typedef struct thread{
 	int       id;                        /* friendly id               */
 	pthread_t pthread;                   /* pointer to actual thread  */
 	struct thpool_* thpool_p;            /* access to thpool          */
 } thread;
-
 
 /* Threadpool */
 typedef struct thpool_{
@@ -78,13 +69,7 @@ typedef struct thpool_{
 	jobqueue*  jobqueue_p;               /* pointer to the job queue  */    
 } thpool_;
 
-
-
-
-
 /* ========================== PROTOTYPES ============================ */
-
-
 static void  thread_init(thpool_* thpool_p, struct thread** thread_p, int id);
 //static void* thread_do(struct thread* thread_p);
 static void* thread_do(void* arg);
@@ -103,13 +88,7 @@ static void  bsem_post(struct bsem *bsem_p);
 static void  bsem_post_all(struct bsem *bsem_p);
 static void  bsem_wait(struct bsem *bsem_p);
 
-
-
-
-
 /* ========================== THREADPOOL ============================ */
-
-
 /* Initialise thread pool */
 struct thpool_* thpool_init(int num_threads){
 
@@ -164,7 +143,6 @@ struct thpool_* thpool_init(int num_threads){
 	return thpool_p;
 }
 
-
 /* Add work to the thread pool */
 int thpool_add_work(thpool_* thpool_p, void *(*function_p)(void*), void* arg_p){
 	job* newjob;
@@ -187,7 +165,6 @@ int thpool_add_work(thpool_* thpool_p, void *(*function_p)(void*), void* arg_p){
 	return 0;
 }
 
-
 /* Wait until all jobs have finished */
 void thpool_wait(thpool_* thpool_p){
 	pthread_mutex_lock(&thpool_p->thcount_lock);
@@ -196,7 +173,6 @@ void thpool_wait(thpool_* thpool_p){
 	}
 	pthread_mutex_unlock(&thpool_p->thcount_lock);
 }
-
 
 /* Destroy the threadpool */
 void thpool_destroy(thpool_* thpool_p){
@@ -236,7 +212,6 @@ void thpool_destroy(thpool_* thpool_p){
 	free(thpool_p);
 }
 
-
 /* Pause all threads in threadpool */
 void thpool_pause(thpool_* thpool_p) {
 	int n;
@@ -251,12 +226,7 @@ void thpool_resume(thpool_* thpool_p) {
 	threads_on_hold = 0;
 }
 
-
-
-
-
 /* ============================ THREAD ============================== */
-
 
 /* Initialize a thread in the thread pool
  * 
@@ -280,7 +250,6 @@ static void thread_init (thpool_* thpool_p, struct thread** thread_p, int id){
 	
 }
 
-
 /* Sets the calling thread on hold */
 static void thread_hold (int arg) {
 	threads_on_hold = 1;
@@ -288,7 +257,6 @@ static void thread_hold (int arg) {
 		sleep(1);
 	}
 }
-
 
 /* What each thread is doing
 * 
@@ -362,19 +330,12 @@ static void* thread_do(void* arg){
 	return NULL;
 }
 
-
 /* Frees a thread  */
 static void thread_destroy (thread* thread_p){
 	free(thread_p);
 }
 
-
-
-
-
 /* ============================ JOB QUEUE =========================== */
-
-
 /* Initialize queue */
 static int jobqueue_init(thpool_* thpool_p){
 	

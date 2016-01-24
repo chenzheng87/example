@@ -3,19 +3,12 @@
  * License:     MIT
  * 
  **********************************/
-
 #ifndef _THPOOL_
 #define _THPOOL_
 
-
-
-
-
 /* =================================== API ======================================= */
-
-
+#define THREADBUFSIZE	1024*128
 typedef struct thpool_* threadpool;
-
 
 /**
  * @brief  Initialize threadpool
@@ -35,7 +28,6 @@ typedef struct thpool_* threadpool;
  *                       NULL on error
  */
 threadpool thpool_init(int num_threads);
-
 
 /**
  * @brief Add work to the job queue
@@ -157,8 +149,5 @@ void thpool_resume(threadpool);
  * @return nothing
  */
 void thpool_destroy(threadpool);
-
-
-
 
 #endif
