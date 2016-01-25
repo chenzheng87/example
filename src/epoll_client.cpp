@@ -11,8 +11,8 @@
 #include <pthread.h>
 #include "taskprocessor.h"
 
-#define MAX_EPOLL_EVENT_COUNT	500			// 同时监听的 epoll 数
-#define MAX_READ_BUF_SIZE		1024 * 8 	// 最大读取数据 buf
+#define MAX_EPOLL_EVENT_COUNT	500
+#define MAX_READ_BUF_SIZE		1024 * 8
 #define NETWORK_READ_THREAD_COUNT	2
 #define SOCKET_ERROR	-1
 #define IPV4ADDRLEN		16
@@ -38,13 +38,13 @@ typedef struct net_context {
 	pthread_mutex_t mutex; 
 } net_context;
 
-int context_init(net_context *context) {
-	pthread_mutex_init(&context->net_buf->mutex, NULL);
-}
+/*int context_init(net_context *context) {*/
+	//pthread_mutex_init(&context->mutex, NULL);
+//}
 
-void context_destroy(net_context *context) {
-	pthread_mutex_destroy(&context->net_buf->mutex, NULL);
-}
+//void context_destroy(net_context *context) {
+	//pthread_mutex_destroy(&context->mutex, NULL);
+/*}*/
 
 void setnonblocking(int sock) {
 	int opts;
@@ -59,6 +59,18 @@ void setnonblocking(int sock) {
 		printf("fcntl(sock,SETFL,opts)");
 		exit(1);
 	}
+}
+
+int del_from_network(net_context *context) {
+	int fd = context->sockfd;
+	if (fd != -1) {
+		struct epoll_event ev;
+		ev.data.fd = fd;
+		epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &ev);
+		close(fd);
+		context->sockfd = -1;
+	}
+	return 0;
 }
 
 void* get_network_event(void *param) {
@@ -78,18 +90,18 @@ void* get_network_event(void *param) {
 			now_ev = events[i];
 			context = (net_context *)now_ev.data.ptr;
 			if(now_ev.events & EPOLLIN) {
-				pthread_mutex_lock(&context->net_buf->mutex);
-				read_num = read(context->fd, context->buf, MAX_READ_BUF_SIZE);
-				if(read_num == 0){
-					pthread_mutex_unlock(&context->net_buf->mutex);
+				pthread_mutex_lock(&context->mutex);
+				read_num = read(context->sockfd, context->buf, MAX_READ_BUF_SIZE);
+				if(read_num == 0) {
+					pthread_mutex_unlock(&context->mutex);
 					printf("read_num == 0, connect may closed\n");
 					del_from_network(context);
 					break;
 				}
 				
-				pthread_mutex_lock(&
-				memcpy();
-				pthread_mutex_unlock(&context->net_buf->mutex);
+				//pthread_mutex_lock(&
+	//			memcpy();
+				pthread_mutex_unlock(&context->mutex);
 				if(thpool_p)
 					thpool_add_work(thpool_p, taskProcessor, (void *)job);
 				
@@ -111,11 +123,10 @@ void* get_network_event(void *param) {
 			}
 		}
 	}
-
 	return NULL;
 }
 
-int start_network(void) {
+int network_init(thpool_* thpool_p) {
 	int ret, i, sockfd;
 	struct epoll_event ev;
 
@@ -149,7 +160,7 @@ void shutdown_network(void) {
 	printf("begin shutdown network ...");
 }
 
-int add_to_network(context *context) {
+int add_to_network(net_context *context) {
 	int ret;
 	struct sockaddr_in address;
 	context->sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -158,11 +169,10 @@ int add_to_network(context *context) {
 		return (-1);
 	}
 	
-	//把socket设置为非阻塞方式
-	_setnonblocking(context->sockfd);
+	setnonblocking(context->sockfd);
 	int optionVal = 0;
 	setsockopt(context->sockfd, SOL_SOCKET, SO_REUSEADDR,  &optionVal, sizeof(optionVal));
-	//设置与要处理的事件相关的文件描述符
+	struct epoll_event ev;
 	ev.data.ptr = context;
 	ev.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP;
 	epoll_ctl(epfd, EPOLL_CTL_ADD, context->sockfd, &ev);
@@ -175,16 +185,5 @@ int add_to_network(context *context) {
 	ret = connect(context->sockfd, (struct sockaddr *)&address, sizeof(address)); 
 	if(ret < 0){
 		return (-1);
-	}
-}
-
-int del_from_network(context *context) {
-	int fd = context->fd;
-	if (fd != -1) {
-		struct epoll_event ev;
-		ev.data.fd = fd;
-		epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &ev);
-		close_socket(fd);
-		context->fd = -1;
 	}
 }
