@@ -1,3 +1,6 @@
+#ifndef TASK_PROCESSOR
+#define TASK_PROCESSOR
+
 #include <stdio.h>
 #include <pthread.h>
 
@@ -6,3 +9,5 @@ void* taskProcessor(void *arg){
    fprintf(stdout, "Thread #%u working, parameter %s\n", (int)pthread_self(), str); 
    return (void *)0;
 }
+
+#endif

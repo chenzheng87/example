@@ -8,8 +8,9 @@
 
 /* =================================== API ======================================= */
 #define THREADBUFSIZE	1024*128
-typedef struct thpool_* threadpool;
 
+typedef struct thread thread;
+typedef struct thpool_* threadpool;
 /**
  * @brief  Initialize threadpool
  * 

@@ -38,7 +38,7 @@ typedef struct bsem {
 
 /* Job */
 typedef struct job{
-	struct job*  prev;                   /* pointer to previous job   */
+	struct job *prev;                   /* pointer to previous job   */
 	void*  (*function)(void* arg);       /* function pointer          */
 	void*  arg;                          /* function's argument       */
 } job;
@@ -128,7 +128,7 @@ struct thpool_* thpool_init(int num_threads){
 
 	pthread_mutex_init(&(thpool_p->thcount_lock), NULL);
 	pthread_cond_init(&thpool_p->threads_all_idle, NULL);
-	
+
 	/* Thread init */
 	int n;
 	for (n=0; n<num_threads; n++){
@@ -136,7 +136,7 @@ struct thpool_* thpool_init(int num_threads){
 		if (THPOOL_DEBUG)
 			printf("THPOOL_DEBUG: Created thread %d in pool \n", n);
 	}
-	
+
 	/* Wait for threads to initialize */
 	while (thpool_p->num_threads_alive != num_threads) {}
 
@@ -176,12 +176,12 @@ void thpool_wait(thpool_* thpool_p){
 
 /* Destroy the threadpool */
 void thpool_destroy(thpool_* thpool_p){
-	
+
 	volatile int threads_total = thpool_p->num_threads_alive;
 
 	/* End each thread 's infinite loop */
 	threads_keepalive = 0;
-	
+
 	/* Give one second to kill idle threads */
 	double TIMEOUT = 1.0;
 	time_t start, end;
@@ -192,7 +192,7 @@ void thpool_destroy(thpool_* thpool_p){
 		time (&end);
 		tpassed = difftime(end,start);
 	}
-	
+
 	/* Poll remaining threads */
 	while (thpool_p->num_threads_alive){
 		bsem_post_all(thpool_p->jobqueue_p->has_jobs);
@@ -202,7 +202,7 @@ void thpool_destroy(thpool_* thpool_p){
 	/* Job queue cleanup */
 	jobqueue_destroy(thpool_p);
 	free(thpool_p->jobqueue_p);
-	
+
 	/* Deallocs */
 	int n;
 	for (n=0; n < threads_total; n++){
@@ -235,7 +235,7 @@ void thpool_resume(thpool_* thpool_p) {
  * 
  */
 static void thread_init (thpool_* thpool_p, struct thread** thread_p, int id){
-	
+
 	*thread_p = (struct thread*)malloc(sizeof(struct thread));
 	if (thread_p == NULL){
 		fprintf(stderr, "thpool_init(): Could not allocate memory for thread\n");
@@ -247,7 +247,7 @@ static void thread_init (thpool_* thpool_p, struct thread** thread_p, int id){
 
 	pthread_create(&(*thread_p)->pthread, NULL, thread_do, (*thread_p));
 	pthread_detach((*thread_p)->pthread);
-	
+
 }
 
 /* Sets the calling thread on hold */
@@ -259,23 +259,23 @@ static void thread_hold (int arg) {
 }
 
 /* What each thread is doing
-* 
-* In principle this is an endless loop. The only time this loop gets interuppted is once
-* thpool_destroy() is invoked or the program exits.
-* 
-* @param  thread        thread that will run this function
-* @return nothing
-*/
+ * 
+ * In principle this is an endless loop. The only time this loop gets interuppted is once
+ * thpool_destroy() is invoked or the program exits.
+ * 
+ * @param  thread        thread that will run this function
+ * @return nothing
+ */
 static void* thread_do(void* arg){
 	/* Set thread name for profiling and debuging */
-    struct thread* thread_p = (struct thread*)arg;
+	struct thread* thread_p = (struct thread*)arg;
 	char thread_name[128] = {0};
 	sprintf(thread_name, "thread-pool-%d", thread_p->id);
 	prctl(PR_SET_NAME, thread_name);
 
 	/* Assure all threads have been created before starting serving */
 	thpool_* thpool_p = thread_p->thpool_p;
-	
+
 	/* Register signal handler */
 	struct sigaction act;
 	sigemptyset(&act.sa_mask);
@@ -284,7 +284,7 @@ static void* thread_do(void* arg){
 	if (sigaction(SIGUSR1, &act, NULL) == -1) {
 		fprintf(stderr, "thread_do(): cannot handle SIGUSR1");
 	}
-	
+
 	/* Mark thread as alive (initialized) */
 	pthread_mutex_lock(&thpool_p->thcount_lock);
 	thpool_p->num_threads_alive += 1;
@@ -295,11 +295,11 @@ static void* thread_do(void* arg){
 		bsem_wait(thpool_p->jobqueue_p->has_jobs);
 
 		if (threads_keepalive){
-			
+
 			pthread_mutex_lock(&thpool_p->thcount_lock);
 			thpool_p->num_threads_working++;
 			pthread_mutex_unlock(&thpool_p->thcount_lock);
-			
+
 			/* Read job from queue and execute it */
 			void*(*func_buff)(void* arg);
 			void*  arg_buff;
@@ -313,7 +313,7 @@ static void* thread_do(void* arg){
 				func_buff(arg_buff);
 				free(job_p);
 			}
-			
+
 			pthread_mutex_lock(&thpool_p->thcount_lock);
 			thpool_p->num_threads_working--;
 			if (!thpool_p->num_threads_working) {
@@ -338,7 +338,7 @@ static void thread_destroy (thread* thread_p){
 /* ============================ JOB QUEUE =========================== */
 /* Initialize queue */
 static int jobqueue_init(thpool_* thpool_p){
-	
+
 	thpool_p->jobqueue_p = (struct jobqueue*)malloc(sizeof(struct jobqueue));
 	if (thpool_p->jobqueue_p == NULL){
 		return -1;
@@ -385,17 +385,17 @@ static void jobqueue_push(thpool_* thpool_p, struct job* newjob){
 	switch(thpool_p->jobqueue_p->len){
 
 		case 0:  /* if no jobs in queue */
-					thpool_p->jobqueue_p->front = newjob;
-					thpool_p->jobqueue_p->rear  = newjob;
-					break;
+			thpool_p->jobqueue_p->front = newjob;
+			thpool_p->jobqueue_p->rear  = newjob;
+			break;
 
 		default: /* if jobs in queue */
-					thpool_p->jobqueue_p->rear->prev = newjob;
-					thpool_p->jobqueue_p->rear = newjob;
-					
+			thpool_p->jobqueue_p->rear->prev = newjob;
+			thpool_p->jobqueue_p->rear = newjob;
+
 	}
 	thpool_p->jobqueue_p->len++;
-	
+
 	bsem_post(thpool_p->jobqueue_p->has_jobs);
 }
 
@@ -410,24 +410,24 @@ static struct job* jobqueue_pull(thpool_* thpool_p){
 	job_p = thpool_p->jobqueue_p->front;
 
 	switch(thpool_p->jobqueue_p->len){
-		
+
 		case 0:  /* if no jobs in queue */
-		  			break;
-		
+			break;
+
 		case 1:  /* if one job in queue */
-					thpool_p->jobqueue_p->front = NULL;
-					thpool_p->jobqueue_p->rear  = NULL;
-					thpool_p->jobqueue_p->len = 0;
-					break;
-		
+			thpool_p->jobqueue_p->front = NULL;
+			thpool_p->jobqueue_p->rear  = NULL;
+			thpool_p->jobqueue_p->len = 0;
+			break;
+
 		default: /* if >1 jobs in queue */
-					thpool_p->jobqueue_p->front = job_p->prev;
-					thpool_p->jobqueue_p->len--;
-					/* more than one job in queue -> post it */
-					bsem_post(thpool_p->jobqueue_p->has_jobs);
-					
+			thpool_p->jobqueue_p->front = job_p->prev;
+			thpool_p->jobqueue_p->len--;
+			/* more than one job in queue -> post it */
+			bsem_post(thpool_p->jobqueue_p->has_jobs);
+
 	}
-	
+
 	return job_p;
 }
 
